@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Response Transformer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            border-radius: 2px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.8), 0 0 30px rgba(236, 72, 153, 0.5); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .input-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.02), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            position: relative;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem 3rem 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 8px 25px rgba(59, 130, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        input::placeholder {
+            color: #64748b;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        .send-btn.loading {
+            pointer-events: none;
+        }
+
+        .send-btn.loading .material-icons {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .response-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .response-section.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .response-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .response-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .ai-avatar::before {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            background: rgba(15, 15, 35, 0.8);
+            border-radius: 13px;
+        }
+
+        .ai-avatar .material-icons {
+            position: relative;
+            z-index: 1;
+            color: #3b82f6;
+        }
+
+        .response-meta {
+            flex: 1;
+        }
+
+        .response-meta h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .response-meta p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .content {
+            line-height: 1.7;
+        }
+
+        .content h1, .content h2, .content h3 {
+            margin: 2rem 0 1rem 0;
+            color: #f1f5f9;
+        }
+
+        .content h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            position: relative;
+            padding-left: 1rem;
+        }
+
+        .content h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 2px;
+        }
+
+        .content h3 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+
+        .content p {
+            margin-bottom: 1.5rem;
+            color: #cbd5e1;
+        }
+
+        .content ul, .content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+
+        .content li {
+            margin-bottom: 0.75rem;
+            color: #cbd5e1;
+            position: relative;
+        }
+
+        .content ul li::marker {
+            color: #3b82f6;
+        }
+
+        .content blockquote {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 10px 10px 0;
+            font-style: italic;
+        }
+
+        .content code {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fbbf24;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        .content pre {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .content pre code {
+            background: none;
+            color: #e2e8f0;
+            padding: 0;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .highlight-box::before {
+            content: '✨';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: linear-gradient(135deg, #0f0f23, #1a1a2e);
+            padding: 0 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+        }
+
+        .stat-card .material-icons {
+            font-size: 2rem;
+            color: #3b82f6;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card h4 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .input-container {
+                flex-direction: column;
+            }
+            
+            .send-btn {
+                align-self: stretch;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Response Transformer</h1>
+            <p class="subtitle">Transform messy AI responses into polished, trustworthy interfaces</p>
+            <p> Type in <strong>tech, ai, innovation or business</strong> to get different response</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <input type="text" id="queryInput" placeholder="Ask me anything about technology, business, or innovation..." autocomplete="off">
+                    <span class="material-icons input-icon">psychology</span>
+                </div>
+                <button class="send-btn" id="sendBtn">
+                    <span class="material-icons">send</span>
+                    <span>Generate</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="response-section" id="responseSection">
+            <div class="response-card">
+                <div class="response-header">
+                    <div class="ai-avatar">
+                        <span class="material-icons">smart_toy</span>
+                    </div>
+                    <div class="response-meta">
+                        <h3>AI Response Engine</h3>
+                        <p>Powered by advanced language processing</p>
+                    </div>
+                    <div class="status-badge">
+                        <span class="material-icons" style="font-size: 16px;">check_circle</span>
+                        <span>Response Ready</span>
+                    </div>
+                </div>
+                <div class="content" id="responseContent">
+                    <!-- Content will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const queryInput = document.getElementById('queryInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const responseSection = document.getElementById('responseSection');
+        const responseContent = document.getElementById('responseContent');
+
+        // Mock API responses based on query topics
+        const mockResponses = {
+            technology: `# The Future of Technology: Trends Shaping Tomorrow
+
+## Artificial Intelligence Revolution
+
+The landscape of artificial intelligence is evolving at an unprecedented pace. **Machine learning algorithms** are becoming more sophisticated, enabling breakthrough applications across industries.
+
+> "AI is not just a technology trend; it's the foundation of the next industrial revolution." - Leading Tech Analyst
+
+### Key Areas of Impact:
+
+- **Healthcare**: AI-powered diagnostics improving patient outcomes
+- **Transportation**: Autonomous vehicles reshaping mobility
+- **Finance**: Algorithmic trading and fraud detection systems
+- **Education**: Personalized learning experiences at scale
+
+## Emerging Technologies to Watch
+
+### Quantum Computing
+Quantum computers promise to solve complex problems that are impossible for classical computers. Companies like IBM, Google, and Amazon are making significant investments in this space.
+
+### Extended Reality (XR)
+The convergence of Virtual Reality, Augmented Reality, and Mixed Reality is creating immersive experiences that blur the line between digital and physical worlds.
+
+\`\`\`javascript
+// Example: Simple AR marker detection
+function detectMarker(imageData) {
+    return processImage(imageData)
+        .then(markers => markers.filter(m => m.confidence > 0.8));
+}
+\`\`\`
+
+### Biotechnology Advances
+CRISPR gene editing, synthetic biology, and personalized medicine are revolutionizing healthcare and opening new possibilities for human enhancement.
+
+## Market Statistics
+
+The global AI market is projected to reach **$1.8 trillion by 2030**, with a compound annual growth rate of 32.9%. This represents unprecedented growth in the technology sector.
+
+## Challenges and Considerations
+
+While these technologies offer immense potential, they also raise important questions about:
+
+1. **Ethical implications** of AI decision-making
+2. **Privacy concerns** in an increasingly connected world  
+3. **Job displacement** due to automation
+4. **Digital divide** and access to emerging technologies
+
+The key to successful technology adoption lies in balancing innovation with responsibility.`,
+
+            business: `# Strategic Business Innovation in the Digital Age
+
+## The New Rules of Business Success
+
+Modern businesses are being transformed by digital disruption, changing customer expectations, and global market dynamics. **Adaptability** has become the ultimate competitive advantage.
+
+### Digital Transformation Imperatives
+
+Companies that fail to embrace digital transformation risk becoming obsolete. The statistics are compelling:
+
+- 70% of companies have a digital transformation strategy
+- Organizations with advanced digital capabilities are **5x more likely** to be top performers
+- Customer experience improvements can increase revenue by **2-7%** and profitability by **1-2%**
+
+## Key Success Strategies
+
+### 1. Customer-Centric Approach
+> "Your most unhappy customers are your greatest source of learning." - Bill Gates
+
+Modern businesses must prioritize customer experience above all else. This means:
+
+- **Personalization at scale** using data analytics
+- **Omnichannel engagement** across all touchpoints
+- **Real-time responsiveness** to customer needs
+- **Proactive problem resolution** before issues escalate
+
+### 2. Data-Driven Decision Making
+
+Organizations are sitting on goldmines of data but many fail to extract actionable insights.
+
+\`\`\`python
+# Example: Customer segmentation analysis
+import pandas as pd
+from sklearn.cluster import KMeans
+
+def segment_customers(customer_data):
+    features = ['purchase_frequency', 'avg_order_value', 'tenure']
+    kmeans = KMeans(n_clusters=4)
+    segments = kmeans.fit_predict(customer_data[features])
+    return segments
+\`\`\`
+
+### 3. Agile Operations
+
+The traditional waterfall approach to business operations is giving way to agile methodologies that emphasize:
+
+- **Iterative development** and continuous improvement
+- **Cross-functional collaboration** breaking down silos  
+- **Rapid prototyping** and MVP (Minimum Viable Product) approaches
+- **Fail-fast mentality** with quick pivots based on market feedback
+
+## Market Opportunities
+
+### Sustainability and ESG
+Environmental, Social, and Governance (ESG) factors are becoming critical business drivers. Companies with strong ESG profiles show:
+
+- **13% lower cost of capital**
+- **Higher employee retention rates**
+- **Premium brand valuations**
+- **Better risk management**
+
+### Remote and Hybrid Work Models
+The pandemic accelerated the adoption of remote work, creating new opportunities:
+
+1. **Global talent acquisition** without geographic constraints
+2. **Reduced operational costs** through smaller physical footprints
+3. **Improved work-life balance** leading to higher productivity
+4. **Environmental benefits** from reduced commuting
+
+## Innovation Frameworks
+
+Successful companies are implementing structured innovation processes:
+
+- **Design thinking** for human-centered solutions
+- **Lean startup** methodology for rapid market validation
+- **Blue ocean strategy** for uncontested market spaces
+- **Open innovation** through strategic partnerships
+
+The future belongs to organizations that can balance technological capability with human insight, creating value for all stakeholders.`,
+
+            innovation: `# Innovation Ecosystem: Building Tomorrow's Solutions Today
+
+## The Innovation Imperative
+
+In today's rapidly evolving landscape, innovation isn't just an advantage—it's essential for survival. Companies that fail to innovate risk being disrupted by more agile competitors.
+
+### What Drives Breakthrough Innovation?
+
+Research shows that the most innovative organizations share common characteristics:
+
+> "Innovation distinguishes between a leader and a follower." - Steve Jobs
+
+## The Innovation Framework
+
+### 1. Culture of Experimentation
+
+Creating an environment where **calculated risks** are encouraged and failure is viewed as a learning opportunity.
+
+#### Key Elements:
+- **Psychological safety** for team members to propose bold ideas
+- **Resource allocation** for experimentation and R&D
+- **Time allowance** for creative exploration (Google's famous 20% time)
+- **Cross-pollination** of ideas across departments
+
+### 2. Customer-Centric Innovation
+
+The most successful innovations solve real customer problems in ways that weren't previously possible.
+
+\`\`\`javascript
+// Innovation impact measurement
+function measureInnovationImpact(innovation) {
+    const metrics = {
+        customerSatisfaction: innovation.npsScore,
+        marketPenetration: innovation.adoptionRate,
+        revenueGrowth: innovation.revenueImpact,
+        operationalEfficiency: innovation.processImprovement
+    };
+    
+    return calculateOverallScore(metrics);
+}
+\`\`\`
+
+### 3. Technology as an Enabler
+
+Modern innovation leverages cutting-edge technologies to create unprecedented possibilities:
+
+- **Artificial Intelligence** for pattern recognition and prediction
+- **IoT sensors** for real-time data collection and analysis
+- **Blockchain** for transparent and secure transactions
+- **Cloud computing** for scalable and flexible infrastructure
+
+## Innovation Methodologies
+
+### Design Thinking Process
+
+1. **Empathize**: Understand user needs and pain points
+2. **Define**: Frame the problem clearly and concisely
+3. **Ideate**: Generate creative solutions without constraints
+4. **Prototype**: Build testable versions of concepts
+5. **Test**: Validate assumptions with real users
+
+### Lean Innovation
+
+Applying lean principles to innovation reduces waste and accelerates time-to-market:
+
+- **Build-Measure-Learn** cycles for rapid iteration
+- **Minimum Viable Product** (MVP) approach
+- **Validated learning** through customer feedback
+- **Pivot or persevere** decisions based on data
+
+## Innovation Metrics and KPIs
+
+Successful innovation programs track meaningful metrics:
+
+| Metric | Description | Target |
+|--------|-------------|---------|
+| R&D Investment | Percentage of revenue invested in research | 3-10% |
+| Time to Market | Speed of bringing new products to market | <12 months |
+| Innovation Pipeline | Number of concepts in development | 20+ ideas |
+| Success Rate | Percentage of innovations that reach market | >30% |
+
+## Global Innovation Trends
+
+### Open Innovation Networks
+Companies are increasingly collaborating with external partners:
+
+- **University partnerships** for research and talent
+- **Startup accelerators** for disruptive technologies
+- **Corporate venture capital** for strategic investments
+- **Innovation hubs** in global technology centers
+
+### Sustainable Innovation
+Environmental and social responsibility are driving new innovation priorities:
+
+- **Circular economy** solutions reducing waste
+- **Renewable energy** technologies
+- **Social impact** innovations addressing global challenges
+- **Ethical AI** development ensuring responsible technology use
+
+## The Future of Innovation
+
+Looking ahead, successful innovation will require:
+
+1. **Interdisciplinary collaboration** combining diverse expertise
+2. **Ethical considerations** built into the innovation process
+3. **Global perspective** addressing worldwide challenges
+4. **Continuous learning** and adaptation to changing conditions
+
+The organizations that master these elements will be the ones that shape the future of their industries and society at large.`,
+
+            default: `# Knowledge Discovery: Exploring New Frontiers
+
+## The Power of Curiosity
+
+Every great discovery begins with a question. In our interconnected world, the ability to synthesize information from multiple sources and generate new insights has become invaluable.
+
+### The Modern Information Landscape
+
+We live in an era of **unprecedented access** to information, yet the challenge isn't finding data—it's finding meaning.
+
+> "The important thing is not to stop questioning. Curiosity has its own reason for existence." - Albert Einstein
+
+## Key Principles of Effective Learning
+
+### 1. Active Engagement
+Passive consumption of information rarely leads to deep understanding. Effective learners:
+
+- **Ask probing questions** that challenge assumptions
+- **Connect new concepts** to existing knowledge
+- **Apply learning immediately** through practice
+- **Teach others** to reinforce understanding
+
+### 2. Diverse Perspectives
+The most robust insights come from examining topics through multiple lenses:
+
+\`\`\`python
+# Example: Multi-perspective analysis
+def analyze_topic(topic, perspectives):
+    insights = []
+    for perspective in perspectives:
+        analysis = apply_framework(topic, perspective)
+        insights.append(analysis)
+    
+    return synthesize_insights(insights)
+\`\`\`
+
+### 3. Critical Thinking
+
+In an age of information abundance, the ability to evaluate sources and identify bias is crucial:
+
+- **Source credibility** assessment
+- **Logical reasoning** and argument evaluation
+- **Evidence quality** analysis
+- **Assumption identification** and testing
+
+## The Learning Process
+
+### Information Architecture
+Modern knowledge workers must develop skills in:
+
+1. **Information filtering** through noise and distractions
+2. **Pattern recognition** across different domains
+3. **Synthesis** of disparate concepts into coherent frameworks
+4. **Communication** of complex ideas in accessible formats
+
+### Cognitive Tools
+Leverage mental models and frameworks for better thinking:
+
+- **First principles thinking** for fundamental understanding
+- **Systems thinking** for complex problem solving
+- **Probabilistic reasoning** for uncertainty management
+- **Analogical reasoning** for creative connections
+
+## Applications Across Domains
+
+### Science and Research
+- Accelerated discovery through AI-assisted research
+- Cross-disciplinary collaboration yielding breakthrough insights
+- Open science initiatives democratizing knowledge access
+
+### Business and Strategy
+- Market intelligence gathering and competitive analysis
+- Customer insight generation from behavioral data
+- Strategic scenario planning and risk assessment
+
+### Personal Development
+- Continuous skill development in rapidly changing fields
+- Building expertise through deliberate practice
+- Creating personal knowledge management systems
+
+## Future Implications
+
+The convergence of human intelligence with artificial intelligence is creating new possibilities for knowledge discovery and application. Success in this environment requires:
+
+- **Adaptability** to rapidly changing information landscapes
+- **Collaboration** with both human and artificial intelligence systems
+- **Ethical awareness** of the impact of knowledge and its applications
+- **Lifelong learning** as a fundamental life skill
+
+The future belongs to those who can navigate complexity, synthesize insights, and create value from information.`
+        };
+
+        // Sample queries for demonstration
+        const sampleQueries = [
+            "What are the latest trends in artificial intelligence?",
+            "How can businesses innovate in the digital age?", 
+            "What's driving innovation in today's market?",
+            "Tell me about emerging technologies",
+            "How is AI transforming industries?"
+        ];
+
+        function getRandomSampleQuery() {
+            return sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
+        }
+
+        function getMockResponse(query) {
+            const lowerQuery = query.toLowerCase();
+            
+            if (lowerQuery.includes('ai') || lowerQuery.includes('artificial') || lowerQuery.includes('technology') || lowerQuery.includes('tech')) {
+                return mockResponses.technology;
+            } else if (lowerQuery.includes('business') || lowerQuery.includes('strategy') || lowerQuery.includes('market') || lowerQuery.includes('company')) {
+                return mockResponses.business;
+            } else if (lowerQuery.includes('innovation') || lowerQuery.includes('future') || lowerQuery.includes('trend')) {
+                return mockResponses.innovation;
+            } else {
+                return mockResponses.default;
+            }
+        }
+
+        function parseMarkdown(text) {
+            // Convert markdown to HTML
+            return text
+                // Headers
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                
+                // Code blocks
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                
+                // Inline code
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                
+                // Bold and italic
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                
+                // Blockquotes
+                .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                
+                // Lists
+                .replace(/^\- (.*$)/gim, '<li>$1</li>')
+                .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
+                
+                // Wrap consecutive <li> elements in <ul> or <ol>
+                .replace(/(<li>.*<\/li>)/gs, (match) => {
+                    if (match.includes('1.') || match.includes('2.') || match.includes('3.')) {
+                        return '<ol>' + match + '</ol>';
+                    }
+                    return '<ul>' + match + '</ul>';
+                })
+                
+                // Tables (basic support)
+                .replace(/\|(.+)\|/g, (match, content) => {
+                    const cells = content.split('|').map(cell => cell.trim());
+                    return '<tr>' + cells.map(cell => `<td>${cell}</td>`).join('') + '</tr>';
+                })
+                
+                // Paragraphs (convert double newlines to paragraphs)
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^/, '<p>')
+                .replace(/$/, '</p>')
+                
+                // Clean up empty paragraphs
+                .replace(/<p><\/p>/g, '')
+                .replace(/<p>(<h[1-6]>)/g, '$1')
+                .replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+        }
+
+        function typeWriter(element, text, speed = 20) {
+            element.innerHTML = '';
+            let i = 0;
+            
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        function addStatsSection() {
+            const stats = `
+                <div class="stats">
+                    <div class="stat-card">
+                        <span class="material-icons">speed</span>
+                        <h4>2.3s</h4>
+                        <p>Response Time</p>
+                    </div>
+                    <div class="stat-card">
+                        <span class="material-icons">psychology</span>
+                        <h4>98.7%</h4>
+                        <p>Accuracy Rate</p>
+                    </div>
+                    <div class="stat-card">
+                        <span class="material-icons">thumb_up</span>
+                        <h4>4.9/5</h4>
+                        <p>User Rating</p>
+                    </div>
+                    <div class="stat-card">
+                        <span class="material-icons">trending_up</span>
+                        <h4>1.2M+</h4>
+                        <p>Queries Processed</p>
+                    </div>
+                </div>
+            `;
+            
+            return stats;
+        }
+
+        async function handleQuery() {
+            const query = queryInput.value.trim();
+            if (!query) {
+                queryInput.value = getRandomSampleQuery();
+                return;
+            }
+
+            // Show loading state
+            sendBtn.classList.add('loading');
+            sendBtn.querySelector('span:last-child').textContent = 'Processing...';
+            sendBtn.querySelector('.material-icons').textContent = 'sync';
+
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+
+            // Get mock response
+            const mockMarkdown = getMockResponse(query);
+            
+            // Convert markdown to styled HTML
+            const styledContent = parseMarkdown(mockMarkdown);
+            
+            // Add highlight boxes for key insights
+            const enhancedContent = styledContent
+                .replace(/<blockquote>/g, '<div class="highlight-box">')
+                .replace(/<\/blockquote>/g, '</div>')
+                .replace(/<table>/g, '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">')
+                .replace(/<\/table>/g, '</table></div>')
+                .replace(/<td>/g, '<td style="padding: 0.75rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);">');
+
+            // Show response section with animation
+            responseSection.classList.add('show');
+            
+            // Add content with typewriter effect for first paragraph
+            const contentDiv = responseContent;
+            contentDiv.innerHTML = enhancedContent + addStatsSection();
+
+            // Reset button state
+            sendBtn.classList.remove('loading');
+            sendBtn.querySelector('span:last-child').textContent = 'Generate';
+            sendBtn.querySelector('.material-icons').textContent = 'send';
+
+            // Clear input
+            queryInput.value = '';
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', handleQuery);
+
+        queryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleQuery();
+            }
+        });
+
+        // Auto-focus input
+        queryInput.focus();
+
+        // Add some sample text on load
+        setTimeout(() => {
+            if (!queryInput.value) {
+                queryInput.placeholder = getRandomSampleQuery();
+            }
+        }, 1000);
+
+        // Animate input icon on focus
+        queryInput.addEventListener('focus', () => {
+            document.querySelector('.input-icon').style.color = '#3b82f6';
+            document.querySelector('.input-icon').style.transform = 'translateY(-50%) scale(1.1)';
+        });
+
+        queryInput.addEventListener('blur', () => {
+            document.querySelector('.input-icon').style.color = '#64748b';
+            document.querySelector('.input-icon').style.transform = 'translateY(-50%) scale(1)';
+        });
+
+        // Add floating animation to cards
+        document.querySelectorAll('.stat-card').forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.style.animation = 'float 3s ease-in-out infinite';
+        });
+
+        // Add CSS for floating animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-5px); }
+            }
+            
+            .stat-card:nth-child(even) {
+                animation-direction: reverse;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
